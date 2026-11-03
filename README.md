@@ -1,85 +1,88 @@
-# brother-ql800 — étiquettes de boîtes de médicaments
+# brother-ql800 — labels for medicine boxes
 
-J'imprime, depuis Home Assistant, une étiquette lisible pour chaque boîte de médicament : pour qui, pour quoi,
-combien et quand.
+**English** | [Français](README.fr.md)
+
+From Home Assistant, I print a readable label for each medicine box: who it is for, what it is for, how much and
+when.
 
 ![Python](https://img.shields.io/badge/Python-3-3776ab)
 ![Pillow](https://img.shields.io/badge/Pillow-images-555)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-MQTT-41bdf5)
-![Licence](https://img.shields.io/badge/licence-MIT-green)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-| Compact, 62 × 19 mm (par défaut) | Grand, 62 × 39 mm (`--grand`) |
+| Compact, 62 × 19 mm (default) | Large, 62 × 39 mm (`--grand`) |
 | :---: | :---: |
-| <img src="docs/exemple-compact.png" width="420" alt="Étiquette compacte : EXEMPLE 500, pour ALEX, 1 le matin, rien le midi, 1 le soir, au repas, 7 jours"> | <img src="docs/exemple-grand.png" width="300" alt="Grande étiquette : EXEMPLE GEL, pour SAM et ALEX, 2 fois par jour, éviter le soleil"> |
+| <img src="docs/exemple-compact.png" width="420" alt="Compact label: EXEMPLE 500, for ALEX, 1 in the morning, none at noon, 1 in the evening, with meals, 7 days"> | <img src="docs/exemple-grand.png" width="300" alt="Large label: EXEMPLE GEL, for SAM and ALEX, twice a day, avoid the sun"> |
 
-*Exemples fictifs, tirés de `exemples/medicaments.json`.*
+*Fictional examples, taken from `exemples/medicaments.json`.*
 
-Fiche du projet sur mon site : [nholder.fr/projets.html#etiquettes](https://nholder.fr/projets.html#etiquettes)
+Project page on my website: [nholder.fr/en/projects.html#etiquettes](https://nholder.fr/en/projects.html#etiquettes)
 
-## ✨ Ce que ça fait
+## ✨ What it does
 
-- Chaque étiquette porte, à gauche, un bandeau noir avec le ou les prénoms écrits à la verticale.
-- À droite du bandeau : le nom du médicament, son usage en une ou deux lignes, et la durée du traitement (sablier).
-- La posologie prend deux formes :
-  - trois cases **matin / midi / soir** (lever de soleil, soleil, lune) avec le nombre de prises, un tiret pour zéro ;
-  - ou un texte libre encadré (« 2 fois par jour »), avec des consignes en dessous si besoin.
-- Des pictogrammes en marge : `repas` (couverts) et `soleil` (soleil barré).
-- Un catalogue JSON décrit les médicaments. Il sert aussi d'inventaire de l'armoire à pharmacie : une fiche sans
-  posologie ni personne est listée, mais pas imprimable.
-- Un mode `--apercu` produit le PNG sans rien envoyer à l'imprimante.
+- Each label has a black band on the left with the first name or names written vertically.
+- To the right of the band: the name of the medicine, what it is for in one or two lines, and the length of the
+  treatment (hourglass).
+- The dosage comes in two forms:
+  - three **morning / noon / evening** boxes (sunrise, sun, moon) with the number of doses, a dash for zero;
+  - or a framed free text ("2 fois par jour"), with instructions below if needed.
+- Pictograms in the margin: `repas` (cutlery) and `soleil` (crossed-out sun).
+- A JSON catalog describes the medicines. It also serves as the inventory of the medicine cabinet: an entry without
+  a dosage or a person is listed, but cannot be printed.
+- An `--apercu` mode produces the PNG without sending anything to the printer.
 
-## ⚙️ Comment ça marche
+## ⚙️ How it works
 
 ```mermaid
 flowchart LR
-  A["catalogue JSON"] --> B["imprimer_medicament.py"]
-  B --> C["gabarit<br/>(Pillow, 1 bit ou noir/rouge)"]
-  C --> D["PNG 696 px de large"]
-  D -->|"API REST HA<br/>mqtt.publish brother_ql/cmd"| E["Home Assistant"]
-  E --> F["add-on local_brother_ql"]
+  A["JSON catalog"] --> B["imprimer_medicament.py"]
+  B --> C["template<br/>(Pillow, 1-bit or black/red)"]
+  C --> D["PNG, 696 px wide"]
+  D -->|"HA REST API<br/>mqtt.publish brother_ql/cmd"| E["Home Assistant"]
+  E --> F["local_brother_ql add-on"]
   F --> G["Brother QL-800"]
-  F -->|"compte rendu"| H["sensor.etiqueteuse_brother_ql_800_derniere_impression"]
+  F -->|"report"| H["sensor.etiqueteuse_brother_ql_800_derniere_impression"]
   H --> B
 ```
 
-1. Le script lit la fiche dans le catalogue et dessine l'étiquette avec Pillow, à 300 dpi.
-2. Il vérifie d'abord que le capteur d'état de l'imprimante vaut `pret`.
-3. Il publie l'ordre sur le sujet MQTT `brother_ql/cmd` (non retenu), par l'API REST de Home Assistant. L'image
-   voyage en base64 dans le message.
-4. Il attend jusqu'à 60 s le compte rendu de l'add-on dans le capteur de dernière impression.
+1. The script reads the entry from the catalog and draws the label with Pillow, at 300 dpi.
+2. It first checks that the printer status sensor is `pret`.
+3. It publishes the order on the MQTT topic `brother_ql/cmd` (not retained), through the Home Assistant REST API. The
+   image travels as base64 inside the message.
+4. It waits up to 60 s for the add-on's report in the last-print sensor.
 
-L'add-on `local_brother_ql` qui pilote l'imprimante n'est pas dans ce dépôt. Il reçoit l'ordre MQTT ; l'état de
-l'imprimante et le compte rendu reviennent dans deux capteurs Home Assistant.
+The `local_brother_ql` add-on that drives the printer is not in this repository. It receives the MQTT order; the
+printer status and the report come back in two Home Assistant sensors.
 
-## 🧰 Matériel et prérequis
+## 🧰 Hardware and requirements
 
-- Une **Brother QL-800** pilotée depuis Home Assistant par un add-on qui écoute `brother_ql/cmd`.
-- Un rouleau :
-  - **DK-22205**, papier blanc continu 62 mm, noir seul (rouleau par défaut) ;
-  - **DK-22251**, continu 62 mm noir et rouge (`--62rouge`) ;
-  - **DK-11201**, étiquettes prédécoupées 29 × 90 mm (`--29x90`).
-- Python 3 et **Pillow** (`pip install pillow`).
-- Les polices Arial (Windows) ou Liberation Sans (Linux, paquet `fonts-liberation2`) : mêmes métriques, même mise en
-  page des deux côtés.
-- Un jeton d'accès longue durée Home Assistant.
+- A **Brother QL-800** driven from Home Assistant by an add-on that listens on `brother_ql/cmd`.
+- A roll:
+  - **DK-22205**, 62 mm continuous white paper, black only (default roll);
+  - **DK-22251**, 62 mm continuous black and red (`--62rouge`);
+  - **DK-11201**, 29 × 90 mm die-cut labels (`--29x90`).
+- Python 3 and **Pillow** (`pip install pillow`).
+- The Arial fonts (Windows) or Liberation Sans (Linux, `fonts-liberation2` package): same metrics, same layout on
+  both sides.
+- A Home Assistant long-lived access token.
 
-## ▶️ Utilisation
+## ▶️ Usage
 
 ```sh
 pip install pillow
-export HA_URL=http://homeassistant.local:8123 HA_TOKEN=...      # jeton longue durée
-export ETIQUETTES_CATALOGUE=/chemin/vers/medicaments.json        # défaut : exemples/medicaments.json
+export HA_URL=http://homeassistant.local:8123 HA_TOKEN=...      # long-lived token
+export ETIQUETTES_CATALOGUE=/path/to/medicaments.json           # default: exemples/medicaments.json
 
-python imprimer_medicament.py --liste                 # le catalogue, avec les personnes
-python imprimer_medicament.py exemple500 --apercu     # PNG seulement : exemple500.png
-python imprimer_medicament.py exemple500              # imprime 1 étiquette compacte
+python imprimer_medicament.py --liste                 # the catalog, with the people
+python imprimer_medicament.py exemple500 --apercu     # PNG only: exemple500.png
+python imprimer_medicament.py exemple500              # prints 1 compact label
 python imprimer_medicament.py exemple500 3            # 3 copies
-python imprimer_medicament.py exemplegel --grand      # 62 × 39 mm, noir seul
-python imprimer_medicament.py exemplegel --62rouge    # 62 × 39 mm, ruban noir et rouge
-python imprimer_medicament.py exemple500 --29x90      # étiquette prédécoupée 29 × 90 mm
+python imprimer_medicament.py exemplegel --grand      # 62 × 39 mm, black only
+python imprimer_medicament.py exemplegel --62rouge    # 62 × 39 mm, black and red tape
+python imprimer_medicament.py exemple500 --29x90      # 29 × 90 mm die-cut label
 ```
 
-Une fiche du catalogue :
+A catalog entry:
 
 ```json
 "exemple500": {
@@ -93,29 +96,30 @@ Une fiche du catalogue :
 }
 ```
 
-`posologie` vaut soit trois nombres (matin, midi, soir), soit un texte. `posologie_detail` accepte plusieurs
-consignes séparées par ` · `, une par ligne. Sur le ruban rouge, la dernière (le maximum par jour) passe en rouge.
+`posologie` is either three numbers (morning, noon, evening) or a text. `posologie_detail` accepts several
+instructions separated by ` · `, one per line. On the red tape, the last one (the daily maximum) is printed in red.
 
-## ⚠️ Limites et pièges
+## ⚠️ Limitations and pitfalls
 
-- **Aucune reprise automatique.** Un échec après l'envoi peut avoir déjà sorti l'étiquette. Sans compte rendu en
-  60 s, le script le dit : regarder l'imprimante avant de relancer, pour éviter un doublon.
-- Si le capteur d'état de l'imprimante ne vaut pas `pret`, rien n'est envoyé : le script affiche l'état et les erreurs.
-- Les identifiants des capteurs (`sensor.etiqueteuse_brother_ql_800_etat`,
-  `sensor.etiqueteuse_brother_ql_800_derniere_impression`) sont écrits dans le code : à adapter à votre installation.
-- Le 62 × 39 mm s'est révélé trop grand : le compact 62 × 19 mm est devenu le format par défaut.
-- Le gabarit noir et rouge ne produit que trois couleurs pures (noir, rouge, blanc) : un bord gris ou rosé serait mal
-  classé par le tri noir/rouge de `brother_ql`.
-- Ce n'est pas un dispositif médical : l'étiquette recopie ce qu'on a saisi, sans aucun contrôle de posologie.
+- **No automatic retry.** A failure after sending may have already printed the label. Without a report within
+  60 s, the script says so: check the printer before running it again, to avoid a duplicate.
+- If the printer status sensor is not `pret`, nothing is sent: the script shows the status and the errors.
+- The sensor IDs (`sensor.etiqueteuse_brother_ql_800_etat`,
+  `sensor.etiqueteuse_brother_ql_800_derniere_impression`) are hard-coded: adapt them to your setup.
+- The 62 × 39 mm format turned out to be too large: the compact 62 × 19 mm became the default format.
+- The black and red template only produces three pure colors (black, red, white): a gray or pinkish edge would be
+  misclassified by the black/red sorting in `brother_ql`.
+- This is not a medical device: the label copies what was entered, without any dosage check.
 
-## 📜 Crédits et licence
+## 📜 Credits and license
 
-- Images dessinées avec [Pillow](https://python-pillow.org/). L'impression elle-même passe par `brother_ql`, côté
-  add-on.
-- Code sous licence MIT, voir [LICENSE](LICENSE). Les noms, prénoms et médicaments des exemples sont fictifs.
+- Images drawn with [Pillow](https://python-pillow.org/). The printing itself goes through `brother_ql`, on the
+  add-on side.
+- Code under the MIT license, see [LICENSE](LICENSE). The names, first names and medicines in the examples are
+  fictional.
 
-## 🤖 Pour les IA et le vibe coding
+## 🤖 For AI and vibe coding
 
-[`AGENTS.md`](AGENTS.md) donne le contexte machine du projet : carte des fichiers, commandes exactes, invariants
-(696 px = 62 mm, image 1 bit ou trois couleurs pures) et pièges connus. Si vous reprenez ce dépôt avec un assistant de
-code (Claude Code, Codex, Cursor…), demandez-lui de le lire avant toute modification.
+[`AGENTS.md`](AGENTS.md) gives the machine context of the project: map of the files, exact commands, invariants
+(696 px = 62 mm, 1-bit image or three pure colors) and known pitfalls. If you take over this repository with a coding
+assistant (Claude Code, Codex, Cursor…), ask it to read that file before making any change.
