@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+# Les etiquettes generees et le vrai catalogue restent en local.
+/*.png
+medicaments.json
+!exemples/medicaments.json

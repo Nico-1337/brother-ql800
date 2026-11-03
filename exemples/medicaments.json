@@ -1,0 +1,41 @@
+{
+  "medicaments": {
+    "exemple500": {
+      "nom": "EXEMPLE 500",
+      "description": "Douleurs, fievre",
+      "personnes": [
+        "ALEX"
+      ],
+      "posologie": [
+        1,
+        0,
+        1
+      ],
+      "pictos": [
+        "repas"
+      ],
+      "duree": "7 jours",
+      "posologie_detail": null
+    },
+    "exemplegel": {
+      "nom": "EXEMPLE GEL",
+      "description": "Application locale",
+      "personnes": [
+        "SAM",
+        "ALEX"
+      ],
+      "posologie": "2 fois par jour",
+      "pictos": [
+        "soleil"
+      ],
+      "duree": null,
+      "posologie_detail": null
+    },
+    "inventaire": {
+      "nom": "EXEMPLE SIROP",
+      "description": "Fiche d'inventaire, pas encore imprimable",
+      "personnes": [],
+      "posologie": null
+    }
+  }
+}
